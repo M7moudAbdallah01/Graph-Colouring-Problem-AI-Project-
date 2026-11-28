@@ -31,8 +31,8 @@ def calculate_conflicts(chromosome, edges):
     return conflicts
 
 # Selection
-def tournament_selection(population, scores, tournament_size=3):
-    selected = random.sample(range(len(population)), tournament_size)
+def tournament_selection(population, scores):
+    selected = random.sample(range(len(population)), 3)
     best_index = selected[0]
     for i in selected:
         if scores[i] < scores[best_index]:
@@ -51,6 +51,7 @@ def crossover(parent1, parent2, rate):
 
 # mutate function
 def mutate(chromosome, k, rate):
+    chromosome = chromosome[:]
     if k < 2:
         return chromosome
     for i in range(len(chromosome)):
@@ -59,7 +60,6 @@ def mutate(chromosome, k, rate):
             chromosome[i] = random.choice(options)
     return chromosome
 
-
 # next_generation function
 def next_generation(population, scores, best, k, pop_size,mutation_rate, crossover_rate, select):
     new_population = [best[:]]
@@ -67,11 +67,11 @@ def next_generation(population, scores, best, k, pop_size,mutation_rate, crossov
         p1 = select(population, scores)
         p2 = select(population, scores)
         for child in crossover(p1, p2, crossover_rate):
-            mutate(child, k, mutation_rate)
+            child = mutate(child, k, mutation_rate)
             new_population.append(child)
     return new_population[:pop_size]
 
-# Genetic Algorithm M
+# Genetic Algorithm
 def run_genetic_algorithm(num_nodes, edges, k, population_size,max_generations, mutation_rate,crossover_rate):
     population = initialize_population(num_nodes, k, population_size)
 
@@ -94,42 +94,19 @@ def run_genetic_algorithm(num_nodes, edges, k, population_size,max_generations, 
             break
 
         population = next_generation(population,scores,best_solution,k,population_size,mutation_rate,crossover_rate,tournament_selection)
-    return best_solution
+    return best_solution, population
 
 def find_min_colors(num_nodes, edges):
     start_time = time.time()
     for k in range(1, num_nodes + 1):
         for attempt in range(RETRIES):
-            solution = run_genetic_algorithm(num_nodes,edges,k,POPULATION_SIZE,MAX_GENERATIONS,MUTATION_RATE,CROSSOVER_RATE)
+            solution, population= run_genetic_algorithm(num_nodes,edges,k,POPULATION_SIZE,MAX_GENERATIONS,MUTATION_RATE,CROSSOVER_RATE)
 
             if calculate_conflicts(solution, edges) == 0:
                 total_time = time.time() - start_time
-                return solution, k, total_time
+                return solution, population , k, total_time
 
     total_time = time.time() - start_time
-    return None, None, total_time
+    return None, None, None, total_time
 
-# Test Graph
-num_nodes = 5
 
-edges = [
-    (0, 1),
-    (0, 2),
-    (1, 2),
-    (1, 3),
-    (2, 4),
-    (3, 4)
-]
-
-# Run Genetic Algorithm
-solution, min_k, total_time = find_min_colors(num_nodes, edges)
-
-# Display Results
-if solution is None:
-    print("No solution found")
-else:
-    print("Best Coloring:", solution)
-    print("Number of Colors:", min_k)
-    print("Number of Conflicts:", calculate_conflicts(solution, edges))
-
-print("Time:", round(total_time, 4), "seconds")
